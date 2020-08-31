@@ -1,0 +1,57 @@
+﻿html, body {
+    font-family: Verdana, Arial, Helvetica, sans-Serif;
+    text-align: center;
+}
+.slider {
+    -webkit-appearance: none;
+    width: 15%;
+    height: 0.5em;
+    background: #cf0808;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+
+
+button {
+    background-color: white;
+    border: 1px solid #cf0808;
+    color: #cf0808;
+    padding: 0.2em;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9em;
+    border-radius: 7px 7px;
+}
+
+#all_div {
+    border: 1px solid #cf0808;
+    border-radius: 12px 12px;
+}
+
+.params_div {
+    border-top: 1px solid #cf0808;
+}
+
+#sliders {
+    text-align: right;
+}
+
+div{
+    padding: 0.3em;
+}
+
+.label {
+    color: #cf0808;
+    padding-left: 0.7em;
+}
+
+
+.slider_span {
+    width: 100%;
+}
+
+table{
+    width: 50%;
+}

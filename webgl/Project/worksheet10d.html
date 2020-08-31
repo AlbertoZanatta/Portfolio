@@ -1,0 +1,147 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<script id="quad-vertex-shader" type="x-shader/x-vertex">
+    attribute vec4 vPosition;
+
+    varying vec3 cubemapCoord;
+
+    uniform mat4 mTex;
+
+    void main()
+    {
+    //varying cubemapCoord for the texture mapping
+    cubemapCoord = (mTex * vPosition).xyz;
+    gl_Position = vPosition;
+
+    }
+</script>
+
+<script id="quad-fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec3 cubemapCoord;
+
+    uniform samplerCube cubeMap;
+
+    void main()
+    {
+ 
+    gl_FragColor = textureCube(cubeMap, cubemapCoord);
+
+    }
+</script>
+
+<script id="sphere-vertex-shader" type="x-shader/x-vertex">
+    attribute vec4 vPosition;
+
+    varying vec3 normal;
+    varying vec3 position;
+
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+
+    void main()
+    {
+    normal = normalize(vPosition.xyz);
+    position = vPosition.xyz;
+    gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+
+    }
+</script>
+
+<script id="sphere-fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+
+    vec3 rotate_to_normal(vec3 normal, vec3 v);
+    float remap(float val);
+
+    varying vec3 normal;
+    varying vec3 position;
+
+    uniform samplerCube cubeMap;
+    uniform sampler2D normalMap;
+    uniform vec3 eye;
+
+    void main()
+    {
+
+    //PI constant term
+    const float PI = 3.1415926535897932384626433832795;
+
+    //u and v texture coordinates
+    float v = acos(normal.y)/PI;
+    float u = atan(normal.z, normal.x)/(2.0*PI);
+
+    //obtain the color from the normalmap
+    vec4 texSample = texture2D(normalMap, vec2(1.0-u,1.0-v));
+
+    //remap the components of the vector to get the actual normal (in tangent space)
+    vec3 tangentSpaceNormal = vec3(remap(texSample.x), remap(texSample.y), remap(texSample.z));
+
+    //apply the rotate_to_normal function to get the perturbated normal (in world space)
+    vec3 perturbatedNormal = rotate_to_normal(normal, tangentSpaceNormal);
+
+    //normalize the perturbated normal
+    perturbatedNormal = normalize(perturbatedNormal);
+
+    //calculate the incident vector (needs no normalization)
+    vec3 incident = position - eye;
+
+    //calculate the reflection vector using the perturbated normal (needs no normalization)
+    vec3 reflection = reflect(incident, perturbatedNormal);
+
+    //obtain the reflected color from the environment cube map
+    gl_FragColor = textureCube(cubeMap, reflection);
+    }
+
+    vec3 rotate_to_normal(vec3 normal, vec3 v)
+    {
+    float a = 1.0/(1.0 + normal.z);
+    float b = -normal.x*normal.y*a;
+    return vec3(1.0 - normal.x*normal.x*a, b, - normal.x)*v.x + vec3(b, 1.0 - normal.y*normal.y*a, -normal.y)*v.y + normal*v.z;
+    }
+
+    float remap(float val)
+    {
+    return (val * 2.0) - 1.0;
+    }
+</script>
+
+<head>
+    <meta charset="utf-8" />
+    <title> </title>
+    <script type="text/javascript" src="../common/webgl-utils.js"></script>
+    <script type="text/javascript" src="../common/initShaders.js"></script>
+    <script type="text/javascript" src="../common/MV.js"></script>
+    <script type="text/javascript" src="../common/cuon-utils.js"></script>
+    <link type="text/css" rel="stylesheet" href="worksheet10.css" />
+    <script type="text/javascript" src="worksheet10d.js"></script>
+
+</head>
+<body>
+    <div id="all_div">
+        <div id="canv_div">
+            <canvas id="canv" width="512" height="512">
+                Please, use a browser which supports HTLM5
+            </canvas>
+        </div>
+        <div class="params_div">
+            <button id="move_cam">Move camera</button>
+            <span class="label">Cube map:</span>
+            <select id="cubemap_menu" size="1">
+                <option value="landscape">landscape</option>
+                <option value="courtyard">courtyard</option>
+            </select>
+            <span class="label">Normal map:</span>
+            <select id="normalmap_menu" size="1">
+                <option value="normalmap">default normalmap</option>
+                <option value="normalmap1">squared normalmap</option>
+                <option value="normalmap2">artistic normalmap</option>
+                <option value="normalmap3">earth normalmap</option>
+            </select>
+        </div>  
+    </div>
+</body>
+</html>

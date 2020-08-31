@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+    attribute vec4 vPosition;
+
+    varying vec3 cubemapCoord;
+
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+
+    void main()
+    {
+        //world-base normal for the texture mapping using the cubeMap
+        cubemapCoord = vPosition.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+    }
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec3 cubemapCoord;
+
+    uniform samplerCube cubeMap;
+
+    void main()
+    {
+    gl_FragColor = textureCube(cubeMap, cubemapCoord);
+    }
+</script>
+
+<head>
+    <meta charset="utf-8" />
+    <title> </title>
+    <script type="text/javascript" src="../common/webgl-utils.js"></script>
+    <script type="text/javascript" src="../common/initShaders.js"></script>
+    <script type="text/javascript" src="../common/MV.js"></script>
+    <link rel="stylesheet" type="text/css" href="worksheet10.css">
+    <script type="text/javascript" src="worksheet10a.js"></script>
+
+</head>
+<body>
+    <div id="all_div">
+        <div id="canv_div">
+            <canvas id="canv" width="512" height="512">
+                Please, use a browser which supports HTLM5
+            </canvas>
+        </div>
+        <div class="params_div">
+            <button id="move_cam">Move camera</button>
+            <span class="label">Cube map:</span>
+            <select id="cubemap_menu" size="1">
+                <option value="landscape">landscape</option>
+                <option value="courtyard">courtyard</option>
+            </select>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,383 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<script id="quad-vertex-shader" type="x-shader/x-vertex">
+    attribute vec4 vPosition;
+
+    varying vec3 cubemapCoord;
+
+    uniform mat4 mTex;
+
+    void main()
+    {
+    //varying cubemapCoord for the texture mapping
+    cubemapCoord = (mTex * vPosition).xyz;
+    gl_Position = vPosition;
+
+    }
+</script>
+
+<script id="quad-fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec3 cubemapCoord;
+
+    uniform samplerCube cubeMap;
+
+    void main()
+    {
+
+    gl_FragColor = textureCube(cubeMap, cubemapCoord);
+
+    }
+</script>
+
+<script id="sphere-vertex-shader" type="x-shader/x-vertex">
+    attribute vec4 vPosition;
+
+    varying vec3 normal;
+    varying vec3 position;
+
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+
+    void main()
+    {
+    position = vPosition.xyz;
+    normal = normalize(vPosition.xyz);
+    gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+    }
+</script>
+
+<script id="sphere-fresnel-fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+
+    vec3 rotate_to_normal(vec3 normal, vec3 v);
+    float remap(float val);
+    vec3 perturbatedNormal(sampler2D normalMap, vec3 normal);
+
+    varying vec3 normal;
+    varying vec3 position;
+
+    uniform samplerCube cubeMap;
+    uniform sampler2D normalMap;
+    uniform int usingNormalMap; //if normalMap == 1, a normal map is applied to the sphere
+    uniform vec3 eye;
+
+    uniform float fresnelScale; //1 (default)
+    uniform float fresnelBias; //0 (default)
+    uniform float fresnelPower; //5 (default)
+    uniform float etaRatio;
+
+
+    void main()
+    {
+
+    //normalize the interpolated normal
+    vec3 nNormal;
+    if(usingNormalMap == 1)
+    {
+    nNormal = perturbatedNormal(normalMap, normal);
+    }
+    else
+    {
+    nNormal = normalize(normal);
+    }
+
+    //calculate the incident vector
+    vec3 incident = position - eye;
+
+    //calculate the reflection vector
+    vec3 reflection = reflect(incident, nNormal);
+
+    //normalize the incident vector for refraction calculations
+    incident = normalize(incident);
+
+    //calculate the refraction vector
+    vec3 refraction = refract(incident, nNormal, etaRatio);
+
+    //calculate the reflection coefficient using an approximation of fresnel equations
+    float reflectionCoefficient = max(0.0, min(1.0, fresnelBias + fresnelScale * pow(1.0 + dot(incident, nNormal), fresnelPower)));
+
+    //obtain the reflected color from the environment cube map
+    vec4 cReflected = textureCube(cubeMap, reflection);
+
+    //obtain the refracted color from the environment cube map
+    vec4 cRefracted = textureCube(cubeMap, refraction);
+
+    //combine the two colors using the reflection coefficient
+    gl_FragColor = reflectionCoefficient * cReflected + (1.0 - reflectionCoefficient) * cRefracted;
+    gl_FragColor.a = 1.0;
+    }
+
+</script>
+
+<script id="sphere-reflection-fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+
+    vec3 rotate_to_normal(vec3 normal, vec3 v);
+    float remap(float val);
+    vec3 perturbatedNormal(sampler2D normalMap, vec3 normal);
+
+    varying vec3 normal;
+    varying vec3 position;
+
+    uniform samplerCube cubeMap;
+    uniform sampler2D normalMap;
+    uniform int usingNormalMap; //if normalMap == 1, a normal map is applied to the sphere
+    uniform vec3 eye;
+
+
+    void main()
+    {
+
+    //normalize the interpolated normal
+    vec3 nNormal;
+    if(usingNormalMap == 1)
+    {
+    nNormal = perturbatedNormal(normalMap, normal);
+    }
+    else
+    {
+    nNormal = normalize(normal);
+    }
+
+    //calculate the incident vector (needs no normalization)
+    vec3 incident = position - eye;
+
+    //calculate the reflection vector (needs no normalization)
+    vec3 reflection = reflect(incident, nNormal);
+
+    //obtain the reflected color from the environment cube map
+    gl_FragColor = textureCube(cubeMap, reflection);
+
+    }
+</script>
+
+<script id="sphere-refraction-fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+
+    vec3 rotate_to_normal(vec3 normal, vec3 v);
+    float remap(float val);
+    vec3 perturbatedNormal(sampler2D normalMap, vec3 normal);
+
+    varying vec3 normal;
+    varying vec3 position;
+
+    uniform samplerCube cubeMap;
+    uniform sampler2D normalMap;
+    uniform int usingNormalMap; //if normalMap == 1, a normal map is applied to the sphere
+    uniform vec3 eye;
+
+    uniform float etaRatio;
+
+
+    void main()
+    {
+
+    //normalize the interpolated normal
+    vec3 nNormal;
+    if(usingNormalMap == 1)
+    {
+    nNormal = perturbatedNormal(normalMap, normal);
+    }
+    else
+    {
+    nNormal = normalize(normal);
+    }
+
+    //calculate the incident vector
+    vec3 incident = position - eye;
+
+    //normalize the incident vector for refraction calculations
+    incident = normalize(incident);
+
+    //calculate the refraction vector
+    vec3 refraction = refract(incident, nNormal, etaRatio);
+
+    //obtain the refracted color from the environment cube map
+    gl_FragColor = textureCube(cubeMap, refraction);
+
+    }
+</script>
+
+
+<script id="sphere-chromatic-fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+
+    vec3 rotate_to_normal(vec3 normal, vec3 v);
+    float remap(float val);
+    vec3 perturbatedNormal(sampler2D normalMap, vec3 normal);
+
+    varying vec3 normal;
+    varying vec3 position;
+
+    uniform samplerCube cubeMap;
+    uniform sampler2D normalMap;
+    uniform int usingNormalMap; //if normalMap == 1, a normal map is applied to the sphere
+    uniform vec3 eye;
+
+    uniform float fresnelScale; //1 (default)
+    uniform float fresnelBias; //0 (default)
+    uniform float fresnelPower; //5 (default)
+    uniform vec3 etaRatios;
+
+
+    void main()
+    {
+
+    //normalize the interpolated normal
+    vec3 nNormal;
+    if(usingNormalMap == 1)
+    {
+    nNormal = perturbatedNormal(normalMap, normal);
+    }
+    else
+    {
+    nNormal = normalize(normal);
+    }
+
+    //calculate the incident vector
+    vec3 incident = position - eye;
+
+    //calculate the reflection vector
+    vec3 reflection = reflect(incident, nNormal);
+
+    //normalize the incident vector for refraction calculations
+    incident = normalize(incident);
+
+    //calculate the refraction vector for color Red
+    vec3 refractionRed = refract(incident, nNormal, etaRatios.x);
+
+    //calculate the refraction vector for color Green
+    vec3 refractionGreen = refract(incident, nNormal, etaRatios.y);
+
+    //calculate the refraction vector for color Green
+    vec3 refractionBlue = refract(incident, nNormal, etaRatios.z);
+
+    //calculate the reflection coefficient using an approximation of fresnel equations
+    float reflectionCoefficient = max(0.0, min(1.0, fresnelBias + fresnelScale * pow(1.0 + dot(incident, nNormal), fresnelPower)));
+
+    //obtain the reflected color from the environment cube map
+    vec4 cReflected = textureCube(cubeMap, reflection);
+
+    //obtain the refracted color from the environment cube map using the three different refraction
+    //vectors for the different colors
+    vec4 cRefracted = vec4(0.0);
+    cRefracted.r = textureCube(cubeMap, refractionRed).r;
+    cRefracted.g = textureCube(cubeMap, refractionGreen).g;
+    cRefracted.b = textureCube(cubeMap, refractionBlue).b;
+    cRefracted.a = 1.0;
+
+    //combine the two colors using the reflection coefficient
+    gl_FragColor = reflectionCoefficient * cReflected + (1.0 - reflectionCoefficient) * cRefracted;
+    gl_FragColor.a = 1.0;
+
+    }
+</script>
+
+<script type="application/glsl" id="common">
+
+    vec3 perturbatedNormal(sampler2D normalMap, vec3 normal)
+    {
+    //PI constant term
+    const float PI = 3.1415926535897932384626433832795;
+
+    //u and v texture coordinates
+    float v = acos(normal.y)/PI;
+    float u = atan(normal.z, normal.x)/(2.0*PI);
+
+    //obtain the color from the normalmap
+    vec4 normalSample = texture2D(normalMap, vec2(1.0-u,1.0-v));
+
+    //remap the components of the vector to get the actual normal (in tangent space)
+    vec3 tangentSpaceNormal = vec3(remap(normalSample.x), remap(normalSample.y), remap(normalSample.z));
+
+    //apply the rotate_to_normal function to get the perturbated normal (in world space)
+    vec3 perturbatedNormal = rotate_to_normal(normal, tangentSpaceNormal);
+
+    //normalize the perturbated normal
+    perturbatedNormal = normalize(perturbatedNormal);
+
+    //return the perturbated normal
+    return perturbatedNormal;
+
+    }
+
+    vec3 rotate_to_normal(vec3 normal, vec3 v)
+    {
+    float a = 1.0/(1.0 + normal.z);
+    float b = -normal.x*normal.y*a;
+    return vec3(1.0 - normal.x*normal.x*a, b, - normal.x)*v.x + vec3(b, 1.0 - normal.y*normal.y*a, -normal.y)*v.y + normal*v.z;
+    }
+
+    float remap(float val)
+    {
+    return (val * 2.0) - 1.0;
+    }
+
+</script>
+
+<head>
+    <meta charset="utf-8" />
+    <title> </title>
+    <script type="text/javascript" src="../common/webgl-utils.js"></script>
+    <script type="text/javascript" src="../common/initShaders.js"></script>
+    <script type="text/javascript" src="../common/MV.js"></script>
+    <script type="text/javascript" src="../common/cuon-utils.js"></script>
+    <link type="text/css" rel="stylesheet" href="worksheet10.css" />
+    <script type="text/javascript" src="worksheet10app.js"></script>
+
+</head>
+<body>
+    <div id="all_div">
+
+        <div id="canv_div">
+            <canvas id="canv" width="512" height="512">
+                Please, use a browser which supports HTLM5
+            </canvas>
+        </div>
+
+        <div class="params_div">
+            <button id="move_cam">Move camera</button>
+            <span class="label">Cube map:</span>
+            <select id="cubemap_menu" size="1">
+                <option value="landscape">landscape</option>
+                <option value="courtyard">courtyard</option>
+            </select>
+            <span class="label">Normal map:</span>
+            <select id="normalmap_menu" size="1">
+                <option value="none">none</option>
+                <option value="normalmap">default normalmap</option>
+                <option value="normalmap1">squared normalmap</option>
+                <option value="normalmap2">artistic normalmap</option>
+                <option value="normalmap3">earth normalmap</option>
+            </select>
+            <span class="label">Shader effect:</span>
+            <select id="sphereprogram_menu" size="1">
+                <option value="reflection">reflection</option>
+                <option value="refraction">refraction</option>
+                <option value="fresnel">fresnel effect</option>
+                <option value="chromatic">chromatic dispersion</option>
+            </select>
+        </div>
+            <div class="params_div" id="sliders">
+                <div class="slider_span">
+                    <span class="label">Fresnel Scale: <span id="fresnelScale"><em>1</em></span></span>
+                    <input id="fs" type="range" min="0" max="100" value="1" class="slider" step="0.5">
+                </div>
+                <div class="slider_span">
+                    <span class="label">Fresnel Bias: <span id="fresnelBias"><em>0</em></span></span>
+                    <input id="fb" type="range" min="0" max="1" value="0" class="slider" step="0.01">
+                </div>
+                <div class="slider_span"> 
+                    <span class="label">Fresnel Power: <span id="fresnelPower"><em>5</em></span></span>
+                    <input id="fp" type="range" min="0" max="10" value="5" class="slider" step="0.1">
+                </div>
+            </div>
+
+    </div>
+   
+</body>
+</html>
