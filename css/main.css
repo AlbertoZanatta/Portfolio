@@ -733,6 +733,11 @@ ul.social-links li:last-child a {
 	transition-duration: .2s
 }
 
+
+.fab, .fa
+{
+   color: #2599dd;
+}
 .client_block:hover {
 	opacity: 1
 }
@@ -969,36 +974,44 @@ ul.social-links li:last-child a {
 	width: 0
 }
 
-.skill-percentage.skill-1 {
-	width: 88%
+.skill-percentage.skill-10 {
+	width: 10%
 }
 
-.skill-percentage.skill-2 {
-	width: 75%
+.skill-percentage.skill-20 {
+	width: 20%
 }
 
-.skill-percentage.skill-3 {
+.skill-percentage.skill-30 {
+	width: 30%
+}
+
+.skill-percentage.skill-40 {
+	width: 40%
+}
+
+.skill-percentage.skill-50 {
+	width: 50%
+}
+
+.skill-percentage.skill-60 {
 	width: 60%
 }
 
-.skill-percentage.skill-4 {
-	width: 95%
+.skill-percentage.skill-70 {
+	width: 70%
 }
 
-.skill-percentage.skill-5 {
-	width: 85%
+.skill-percentage.skill-80 {
+	width: 80%
 }
 
-.skill-percentage.skill-6 {
-	width: 72%
+.skill-percentage.skill-90 {
+	width: 90%
 }
 
-.skill-percentage.skill-7 {
-	width: 60%
-}
-
-.skill-percentage.skill-8 {
-	width: 77%
+.skill-percentage.skill-100 {
+	width: 100%
 }
 
 .page-ajax-loaded {
@@ -1907,3 +1920,4 @@ blockquote {
 .g-recaptcha {
 	margin-bottom: 20px
 }
+
